@@ -10,6 +10,8 @@ import {
   CacheStore,
   Metadata,
   SEOInjectorOptions,
+  Logger,
+  RetryConfig,
 } from './types';
 import {
   detectLanguage,
@@ -24,6 +26,7 @@ import {
   convertToArray,
   removeExistingSeoInjectorTags,
 } from './utils/html';
+import { getLogger } from './logger';
 
 export class SEOInjector {
   private apiKey: string;
@@ -34,6 +37,7 @@ export class SEOInjector {
   private cache: boolean;
   private cacheDuration: number;
   private debug: boolean;
+  private logger: Logger;
   private httpClient: HTTPClient;
   private cacheStore: CacheStore;
 
@@ -44,12 +48,17 @@ export class SEOInjector {
    */
   constructor(apiKey: string, options: SEOInjectorOptions = {}) {
     this.apiKey = apiKey;
-    this.apiUrl = options.apiUrl || 'https://api.seoinjector.com/api/v1';
+    this.apiUrl = options.apiUrl || 'https://api.seoinjector.com/api';
     this.cache = options.cache !== false; // Default: true
     this.cacheDuration = options.cacheDuration || 3600; // 1 hour
     this.debug = options.debug || false;
-    this.httpClient = new HTTPClient();
+    this.logger = getLogger(this.debug, options.logger);
+    this.httpClient = new HTTPClient(options.retry, this.logger);
     this.cacheStore = options.cacheStore || new MemoryCache();
+
+    this.logger.debug(
+      `SEOInjector initialized with apiKey: ${this.apiKey.slice(0, 8)}...`
+    );
   }
 
   /**
@@ -140,12 +149,14 @@ export class SEOInjector {
 
     // Check cache first
     if (this.cache) {
-      const cached = await this.cacheStore.get(cacheKey);
-      if (cached) {
-        if (this.debug) {
-          console.log(`[SEO Injector] Cache hit for ${url}`);
+      try {
+        const cached = await this.cacheStore.get(cacheKey);
+        if (cached) {
+          this.logger.debug(`Cache hit for ${url}`);
+          return cached;
         }
-        return cached;
+      } catch (error) {
+        this.logger.warn(`Cache read error: ${(error as Error).message}`);
       }
     }
 
@@ -155,22 +166,23 @@ export class SEOInjector {
         this.apiKey
       )}?url=${encodeURIComponent(url)}&lang=${encodeURIComponent(language)}`;
 
-      if (this.debug) {
-        console.log(`[SEO Injector] Fetching metadata for ${url}`);
-      }
+      this.logger.debug(`Fetching metadata for ${url} (lang: ${language})`);
 
       const data = await this.httpClient.get<APIResponse>(apiUrl);
 
       // Cache the result
       if (this.cache && data && !data.error) {
-        await this.cacheStore.set(cacheKey, data, this.cacheDuration);
+        try {
+          await this.cacheStore.set(cacheKey, data, this.cacheDuration);
+          this.logger.debug(`Cached metadata for ${url}`);
+        } catch (error) {
+          this.logger.warn(`Cache write error: ${(error as Error).message}`);
+        }
       }
 
       return data || null;
     } catch (error) {
-      if (this.debug) {
-        console.error('[SEO Injector] Error fetching metadata:', error);
-      }
+      this.logger.error(`Error fetching metadata for ${url}: ${(error as Error).message}`);
       return null;
     }
   }
@@ -188,12 +200,14 @@ export class SEOInjector {
 
     // Check cache first
     if (this.cache) {
-      const cached = await this.cacheStore.get(cacheKey);
-      if (cached) {
-        if (this.debug) {
-          console.log(`[SEO Injector] Cache hit for dynamic ${url}`);
+      try {
+        const cached = await this.cacheStore.get(cacheKey);
+        if (cached) {
+          this.logger.debug(`Cache hit for dynamic ${url}`);
+          return cached;
         }
-        return cached;
+      } catch (error) {
+        this.logger.warn(`Cache read error: ${(error as Error).message}`);
       }
     }
 
@@ -203,9 +217,9 @@ export class SEOInjector {
         this.apiKey
       )}?url=${encodeURIComponent(url)}&lang=${encodeURIComponent(language)}`;
 
-      if (this.debug) {
-        console.log(`[SEO Injector] Fetching dynamic metadata for ${url}`);
-      }
+      this.logger.debug(
+        `Fetching dynamic metadata for ${url} (lang: ${language}, context keys: ${Object.keys(context).join(', ')})`
+      );
 
       const data = await this.httpClient.post<APIResponse>(
         apiUrl,
@@ -215,14 +229,17 @@ export class SEOInjector {
 
       // Cache the result
       if (this.cache && data && !data.error) {
-        await this.cacheStore.set(cacheKey, data, this.cacheDuration);
+        try {
+          await this.cacheStore.set(cacheKey, data, this.cacheDuration);
+          this.logger.debug(`Cached dynamic metadata for ${url}`);
+        } catch (error) {
+          this.logger.warn(`Cache write error: ${(error as Error).message}`);
+        }
       }
 
       return data || null;
     } catch (error) {
-      if (this.debug) {
-        console.error('[SEO Injector] Error fetching dynamic metadata:', error);
-      }
+      this.logger.error(`Error fetching dynamic metadata for ${url}: ${(error as Error).message}`);
       return null;
     }
   }
@@ -310,7 +327,7 @@ export class SEOInjector {
 
     // Get meta tags
     const metas = head.querySelectorAll('meta');
-    for (const meta of metas) {
+    Array.from(metas).forEach((meta) => {
       const name = meta.getAttribute('name');
       const property = meta.getAttribute('property');
       const content = meta.getAttribute('content');
@@ -320,11 +337,11 @@ export class SEOInjector {
       } else if (property && content) {
         html += `<meta property="${property}" content="${content}">\n`;
       }
-    }
+    });
 
     // Get link tags
     const links = head.querySelectorAll('link[rel], link[hreflang]');
-    for (const link of links) {
+    Array.from(links).forEach((link) => {
       const rel = link.getAttribute('rel');
       const hreflang = link.getAttribute('hreflang');
       const href = link.getAttribute('href');
@@ -336,7 +353,7 @@ export class SEOInjector {
           html += `<link rel="${rel}" href="${href}">\n`;
         }
       }
-    }
+    });
 
     return html;
   }

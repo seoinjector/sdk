@@ -16,7 +16,21 @@ export type {
   ParsedUrl,
   DynamicMetadataOptions,
   EnvironmentInfo,
+  RetryConfig,
+  Logger,
 } from './types';
+
+// Error classes
+export {
+  SEOInjectorError,
+  APIError,
+  NetworkError,
+  CacheError,
+  InvalidConfigError,
+} from './errors';
+
+// Logger
+export { getLogger } from './logger';
 
 // Cache implementations
 export { MemoryCache } from './cache/memory';
