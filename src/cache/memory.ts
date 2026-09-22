@@ -1,15 +1,25 @@
 /**
  * In-Memory Cache Store
  * Fast, simple cache that persists for the lifetime of the object
+ * Uses deep copy to prevent data mutation across references
  */
 
 import { APIResponse, CacheStore } from '../types';
+
+/**
+ * Deep copy an object using JSON serialization
+ * Works for any JSON-serializable object
+ */
+function deepCopy<T>(obj: T): T {
+  return JSON.parse(JSON.stringify(obj));
+}
 
 export class MemoryCache implements CacheStore {
   private store = new Map<string, { data: APIResponse; expiresAt: number }>();
 
   /**
    * Get cached data if not expired
+   * Returns a deep copy to prevent external mutations
    */
   async get(key: string): Promise<APIResponse | null> {
     const entry = this.store.get(key);
@@ -24,11 +34,13 @@ export class MemoryCache implements CacheStore {
       return null;
     }
 
-    return entry.data;
+    // Return a deep copy to prevent mutations from affecting cache
+    return deepCopy(entry.data);
   }
 
   /**
    * Set cache entry with TTL
+   * Stores a deep copy to prevent mutations of original data
    */
   async set(
     key: string,
@@ -36,7 +48,8 @@ export class MemoryCache implements CacheStore {
     ttl: number
   ): Promise<void> {
     const expiresAt = Date.now() + ttl * 1000;
-    this.store.set(key, { data: value, expiresAt });
+    // Store a deep copy to prevent mutations of original data
+    this.store.set(key, { data: deepCopy(value), expiresAt });
   }
 
   /**

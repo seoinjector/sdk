@@ -62,6 +62,45 @@ export interface CacheStore {
 }
 
 /**
+ * Retry configuration for failed requests
+ */
+export interface RetryConfig {
+  /**
+   * Maximum number of retry attempts
+   * @default 3
+   */
+  maxRetries?: number;
+
+  /**
+   * Initial delay in milliseconds
+   * @default 100
+   */
+  baseDelay?: number;
+
+  /**
+   * Maximum delay in milliseconds
+   * @default 5000
+   */
+  maxDelay?: number;
+
+  /**
+   * Exponential backoff multiplier
+   * @default 2
+   */
+  backoffMultiplier?: number;
+}
+
+/**
+ * Logger interface for custom logging
+ */
+export interface Logger {
+  debug(message: string, ...args: any[]): void;
+  info(message: string, ...args: any[]): void;
+  warn(message: string, ...args: any[]): void;
+  error(message: string, ...args: any[]): void;
+}
+
+/**
  * Configuration options for SEOInjector
  */
 export interface SEOInjectorOptions {
@@ -94,6 +133,18 @@ export interface SEOInjectorOptions {
    * @default false
    */
   debug?: boolean;
+
+  /**
+   * Custom logger implementation
+   * @default ConsoleLogger (if debug=true) or NoOpLogger (if debug=false)
+   */
+  logger?: Logger;
+
+  /**
+   * Retry configuration for failed requests
+   * @default { maxRetries: 3, baseDelay: 100, maxDelay: 5000, backoffMultiplier: 2 }
+   */
+  retry?: RetryConfig;
 }
 
 /**
