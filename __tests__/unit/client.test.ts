@@ -162,7 +162,7 @@ describe('SEOInjector', () => {
       );
     });
 
-    it('should send context as POST body', async () => {
+    it('should send context as POST body and pass headers', async () => {
       const mockResponse = {
         metaTags: [],
         hreflangTags: [],
@@ -177,19 +177,23 @@ describe('SEOInjector', () => {
       const seo = new SEOInjector('test_key');
       await seo
         .setUrl('/products/:id')
+        .setLanguage('es')
         .setContext(context)
         .getDynamic();
 
-      // Verify POST was called
+      // Verify POST was called with body and Accept-Language header
       expect(mockFetch).toHaveBeenCalled();
       const callArgs = mockFetch.mock.calls[0];
       expect(callArgs[1]?.method).toBe('POST');
       expect(callArgs[1]?.body).toContain('product');
+      expect(callArgs[1]?.headers).toMatchObject({
+        'Accept-Language': 'es',
+      });
     });
   });
 
   describe('Language Detection', () => {
-    it('should use explicit language if set', async () => {
+    it('should use explicit language if set in headers', async () => {
       const mockResponse = {
         metaTags: [{ name: 'title', content: 'Test' }],
         hreflangTags: [],
@@ -203,12 +207,14 @@ describe('SEOInjector', () => {
       const seo = new SEOInjector('test_key');
       await seo.setUrl('/about').setLanguage('fr').get();
 
-      // Check URL contains lang parameter
-      const url = mockFetch.mock.calls[0][0];
-      expect(url).toContain('lang=fr');
+      // Verify Accept-Language header contains 'fr'
+      const options = mockFetch.mock.calls[0][1];
+      expect(options?.headers).toMatchObject({
+        'Accept-Language': 'fr',
+      });
     });
 
-    it('should fall back to detected language', async () => {
+    it('should fall back to detected language in headers', async () => {
       const mockResponse = {
         metaTags: [],
         hreflangTags: [],
@@ -222,12 +228,14 @@ describe('SEOInjector', () => {
       const seo = new SEOInjector('test_key');
       await seo.setUrl('/about').get();
 
-      // navigator.language is 'en-US', should use 'en'
-      const url = mockFetch.mock.calls[0][0];
-      expect(url).toContain('lang=en');
+      // navigator.language is 'en-US', should extract and pass 'en'
+      const options = mockFetch.mock.calls[0][1];
+      expect(options?.headers).toMatchObject({
+        'Accept-Language': 'en',
+      });
     });
 
-    it('should default to "en" if no language detected', async () => {
+    it('should default to "en" header if no language detected', async () => {
       // Temporarily override navigator
       const originalNavigator = global.navigator;
       Object.defineProperty(global, 'navigator', {
@@ -248,8 +256,10 @@ describe('SEOInjector', () => {
       const seo = new SEOInjector('test_key');
       await seo.setUrl('/about').get();
 
-      const url = mockFetch.mock.calls[0][0];
-      expect(url).toContain('lang=en');
+      const options = mockFetch.mock.calls[0][1];
+      expect(options?.headers).toMatchObject({
+        'Accept-Language': 'en',
+      });
 
       // Restore navigator
       Object.defineProperty(global, 'navigator', {

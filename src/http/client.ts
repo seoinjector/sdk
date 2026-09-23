@@ -156,7 +156,10 @@ export class HTTPClient {
   ): Promise<T> {
     return this.fetch<T>(url, {
       method: 'GET',
-      headers,
+      headers: {
+        'Accept': 'application/json',
+        ...headers,
+      },
     });
   }
 }
