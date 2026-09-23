@@ -15,7 +15,7 @@ export default [
         declaration: false,
       }),
     ],
-    external: ['tslib'],
+    external: ['tslib', 'react'],
   },
   // CommonJS build
   {
