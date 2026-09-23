@@ -372,3 +372,5 @@ function simpleHash(str: string): string {
   }
   return 'h' + Math.abs(hash).toString(36);
 }
+
+export type { Metadata } from './types';

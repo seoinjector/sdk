@@ -20,8 +20,9 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "types": ["jest", "node"]
   },
-  "include": ["src/**/*", "eslint.config.js"],
-  "exclude": ["node_modules", "dist", "__tests__"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "__tests__", "eslint.config.js", "rollup.config.js"]
 }
