@@ -5,28 +5,12 @@ export default [
   {
     files: ["src/**/*.ts"],
     languageOptions: {
-      rules: {
-        indent: ["error", 2],
-        "linebreak-style": ["error", "unix"],
-        quotes: ["error", "single"],
-        "no-console": "warn",
-        "no-unused-vars": "off",
-        "@typescript-eslint/no-unused-vars": [
-          "error",
-          { vars: "all", args: "after-used", ignoreRestSiblings: false },
-        ],
-        "@typescript-eslint/explicit-function-return-type": "warn", // Consider using explicit annotations for object literals and function return types even when they can be inferred.
-        "no-empty": "warn",
-        "react/react-in-jsx-scop": 0,
-        "@typescript-eslint/no-explicit-any": "off",
-      },
-      parser: {
-        project: ["./tsconfig.json"],
-        tsconfigRootDir: import.meta.dirname,
-      },
+      parser: typescriptParser,
       parserOptions: {
         ecmaVersion: "latest",
         sourceType: "module",
+        project: ["./tsconfig.json"],
+        tsconfigRootDir: import.meta.dirname,
       },
     },
     plugins: {
@@ -34,6 +18,19 @@ export default [
     },
     rules: {
       ...typescriptEslint.configs.recommended.rules,
+      indent: ["error", 2],
+      "linebreak-style": ["error", "unix"],
+      quotes: ["error", "single"],
+      "no-console": "off",
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "off",
+        { vars: "all", args: "after-used", ignoreRestSiblings: false },
+      ],
+      "@typescript-eslint/explicit-function-return-type": "warn",
+      "no-empty": "warn",
+      "react/react-in-jsx-scope": 0,
+      "@typescript-eslint/no-explicit-any": "off",
     },
   },
   {
