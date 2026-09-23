@@ -35,6 +35,19 @@ export { getLogger } from './logger';
 // Cache implementations
 export { MemoryCache } from './cache/memory';
 
+
+// React Integration
+export { useMetadata } from './integrations/react/useMetadata';
+export type { UseMetadataOptions, UseMetadataReturn } from './integrations/react/useMetadata';
+
+// Next.js Integration
+export { getMetadata, withMetadata, resetSEOInstance } from './integrations/nextjs/getMetadata';
+export type {
+  GetMetadataOptions,
+  GetMetadataWithApiKeyOptions
+} from './integrations/nextjs/getMetadata';
+
+
 // Utilities (for advanced usage)
 export {
   convertToHtml,
