@@ -164,11 +164,17 @@ export class SEOInjector {
     try {
       const apiUrl = `${this.apiUrl}/meta/${encodeURIComponent(
         this.apiKey
-      )}?url=${encodeURIComponent(url)}&lang=${encodeURIComponent(language)}`;
+      )}?url=${encodeURIComponent(url)}`;
 
       this.logger.debug(`Fetching metadata for ${url} (lang: ${language})`);
 
-      const data = await this.httpClient.get<APIResponse>(apiUrl);
+      const headers: Record<string, string> = {};
+
+      if (language) {
+        headers['Accept-Language'] = language;
+      }
+
+      const data = await this.httpClient.get<APIResponse>(apiUrl, headers);
 
       // Cache the result
       if (this.cache && data && !data.error) {
@@ -215,16 +221,24 @@ export class SEOInjector {
     try {
       const apiUrl = `${this.apiUrl}/dynamic-meta/${encodeURIComponent(
         this.apiKey
-      )}?url=${encodeURIComponent(url)}&lang=${encodeURIComponent(language)}`;
+      )}?url=${encodeURIComponent(url)}`;
 
       this.logger.debug(
         `Fetching dynamic metadata for ${url} (lang: ${language}, context keys: ${Object.keys(context).join(', ')})`
       );
 
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+
+      if (language) {
+        headers['Accept-Language'] = language;
+      }
+
       const data = await this.httpClient.post<APIResponse>(
         apiUrl,
         { context },
-        { 'Content-Type': 'application/json' }
+        headers
       );
 
       // Cache the result
