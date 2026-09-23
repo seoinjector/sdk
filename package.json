@@ -1,6 +1,6 @@
 {
   "name": "@seoinjector/sdk",
-  "version": "1.0.0-alpha.2",
+  "version": "1.0.0-alpha.3",
   "description": "Universal JavaScript/TypeScript SDK for SEO Injector - Dynamic SEO metadata management",
   "type": "module",
   "main": "./dist/index.js",
